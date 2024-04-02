@@ -67,32 +67,54 @@ void write_bootblock(FILE **imagefile, FILE *bootfile, Elf32_Ehdr *boot_header, 
 /* Writes the kernel to the image file */
 void write_kernel(FILE **imagefile, FILE *kernelfile, Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
 {
+	int num_sec = (kernel_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
+
+	/* write kernel to image */
+
+	char *buffer = malloc(num_sec * SECTOR_SIZE);
+	fseek(kernelfile, kernel_phdr->p_offset, SEEK_SET);
+	fread(buffer, kernel_phdr->p_filesz, 1, kernelfile);
+
+	fwrite(buffer, num_sec * SECTOR_SIZE, 1, *imagefile);
+
+	free(buffer);
 }
 
 /* Counts the number of sectors in the kernel */
 int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
 {
-	return 0;
+	int num_sec = (kernel_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
+	return num_sec;
 }
 
 /* Records the number of sectors in the kernel */
 void record_kernel_sectors(FILE **imagefile, Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr, int num_sec)
 {
+	/* write kernel size in sectors */
+	fseek(*imagefile, 2, SEEK_SET);
+	fwrite(&num_sec, sizeof(int), 1, *imagefile);
 }
 
 /* Prints segment information for --extended option */
 void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec)
 {
 
-	/* print number of disk sectors used by the image */
+	printf("0x0000: ./bootblock\n");
+	printf("\tsegment 0\n");
+	printf("\t\toffset 0x%04x\tvaddr 0x%04x\n", bph->p_offset, bph->p_vaddr);
+	printf("\t\tfilesz 0x%04x\tmemsz 0x%04x\n", bph->p_filesz, bph->p_memsz);
+	printf("\t\twriting 0x%04x bytes\n", bph->p_filesz);
+	printf("\t\tpadding up to 0x0200\n");
 
-	/* bootblock segment info */
+	printf("0x1000: ./kernel\n");
+	printf("\tsegment 0\n");
+	printf("\t\toffset 0x%04x\tvaddr 0x%04x\n", kph->p_offset, kph->p_vaddr);
+	printf("\t\tfilesz 0x%04x\tmemsz 0x%04x\n", kph->p_filesz, kph->p_memsz);
+	printf("\t\twriting 0x%04x bytes\n", kph->p_filesz);
+	printf("\t\tpadding up to 0x1400\n");
 
-	/* print kernel segment info */
-
-	/* print kernel size in sectors */
+	printf("os_size: %d sectors\n", num_sec);
 }
-// more helper functions...
 
 /* MAIN */
 int main(int argc, char **argv)
@@ -113,46 +135,34 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* read executable bootblock file */
+	/* read executable bootblock and kernel file */
 
-	boot_program_header = read_exec_file(&bootfile, argv[1], &boot_header);
-
-	printf("Bootblock program header information:\n");
-	printf("Type: %d\n", boot_program_header->p_type);
-	printf("Offset: %d\n", boot_program_header->p_offset);
-	printf("Vaddr: %d\n", boot_program_header->p_vaddr);
-	printf("Paddr: %d\n", boot_program_header->p_paddr);
-	printf("Filesz: %d\n", boot_program_header->p_filesz);
-	printf("Memsz: %d\n", boot_program_header->p_memsz);
-	printf("Flags: %d\n", boot_program_header->p_flags);
-	printf("Align: %d\n", boot_program_header->p_align);
+	if (argc == 3)
+	{
+		boot_program_header = read_exec_file(&bootfile, argv[1], &boot_header);
+		kernel_program_header = read_exec_file(&kernelfile, argv[2], &kernel_header);
+	}
+	else if (argc == 4)
+	{
+		boot_program_header = read_exec_file(&bootfile, argv[2], &boot_header);
+		kernel_program_header = read_exec_file(&kernelfile, argv[3], &kernel_header);
+	}
 
 	/* write bootblock */
 
 	write_bootblock(&imagefile, bootfile, boot_header, boot_program_header);
 
-	/*Write image file signature*/
+	/* Write image file signature */
 	fseek(imagefile, BOOTLOADER_SIG_OFFSET, SEEK_SET);
 	fwrite("\x55\xAA", 2, 1, imagefile);
-	
-
-	/* read executable kernel file */
-
-	kernel_program_header = read_exec_file(&kernelfile, argv[2], &kernel_header);
-
-	printf("Kernel program header information:\n");
-	printf("Type: %d\n", kernel_program_header->p_type);
-	printf("Offset: %d\n", kernel_program_header->p_offset);
-	printf("Vaddr: %d\n", kernel_program_header->p_vaddr);
-	printf("Paddr: %d\n", kernel_program_header->p_paddr);
-	printf("Filesz: %d\n", kernel_program_header->p_filesz);
-	printf("Memsz: %d\n", kernel_program_header->p_memsz);
-	printf("Flags: %d\n", kernel_program_header->p_flags);
-	printf("Align: %d\n", kernel_program_header->p_align);
 
 	/* write kernel segments to image */
 
+	write_kernel(&imagefile, kernelfile, kernel_header, kernel_program_header);
+
 	/* tell the bootloader how many sectors to read to load the kernel */
+
+	record_kernel_sectors(&imagefile, kernel_header, kernel_program_header, count_kernel_sectors(kernel_header, kernel_program_header));
 
 	/* check for  --extended option */
 	if (!strncmp(argv[1], "--extended", 11))
