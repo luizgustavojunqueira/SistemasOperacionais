@@ -55,10 +55,16 @@ void write_bootblock(FILE **imagefile, FILE *bootfile, Elf32_Ehdr *boot_header, 
 
 	/* write bootblock to image */
 
+	// Cria buffer para armazenar setor
 	char *buffer = malloc(num_sec * SECTOR_SIZE);
+
+	// Move o ponteiro de leitura para o início do programa do bootblock
 	fseek(bootfile, boot_phdr->p_offset, SEEK_SET);
+
+	// Le 1 setor do bootblock
 	fread(buffer, boot_phdr->p_filesz, 1, bootfile);
 
+	// Escreve 1 setor do bootblock no arquivo de imagem
 	fwrite(buffer, num_sec * SECTOR_SIZE, 1, *imagefile);
 
 	free(buffer);
@@ -71,10 +77,16 @@ void write_kernel(FILE **imagefile, FILE *kernelfile, Elf32_Ehdr *kernel_header,
 
 	/* write kernel to image */
 
+	// Cria buffer para armazenar setor
 	char *buffer = malloc(num_sec * SECTOR_SIZE);
+
+	// Move o ponteiro de leitura para o início do programa do kernel
 	fseek(kernelfile, kernel_phdr->p_offset, SEEK_SET);
+
+	// Le 1 setor do kernel
 	fread(buffer, kernel_phdr->p_filesz, 1, kernelfile);
 
+	// Escreve 1 setor do kernel no arquivo de imagem
 	fwrite(buffer, num_sec * SECTOR_SIZE, 1, *imagefile);
 
 	free(buffer);
@@ -83,6 +95,7 @@ void write_kernel(FILE **imagefile, FILE *kernelfile, Elf32_Ehdr *kernel_header,
 /* Counts the number of sectors in the kernel */
 int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
 {
+	// Calcula o número de setores necessários para armazenar o kernel, garantindo que o kernel ocupe um número inteiro de setores
 	int num_sec = (kernel_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
 	return num_sec;
 }
@@ -91,7 +104,11 @@ int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
 void record_kernel_sectors(FILE **imagefile, Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr, int num_sec)
 {
 	/* write kernel size in sectors */
+
+	// Muda o ponteiro de escrita para o byte 2 do arquivo de imagem
 	fseek(*imagefile, 2, SEEK_SET);
+
+	// Escreve o número de setores do kernel no arquivo de imagem
 	fwrite(&num_sec, sizeof(int), 1, *imagefile);
 }
 
@@ -138,6 +155,7 @@ int main(int argc, char **argv)
 
 	/* read executable bootblock and kernel file */
 
+	// Get correct file name from arguments
 	if (argc == 3)
 	{
 		boot_program_header = read_exec_file(&bootfile, argv[1], &boot_header);
@@ -154,7 +172,9 @@ int main(int argc, char **argv)
 	write_bootblock(&imagefile, bootfile, boot_header, boot_program_header);
 
 	/* Write image file signature */
+	// Muda o ponteiro de escrita para o byte 510 do arquivo de imagem
 	fseek(imagefile, BOOTLOADER_SIG_OFFSET, SEEK_SET);
+	// Escreve a assinatura do bootloader no arquivo de imagem
 	fwrite("\x55\xAA", 2, 1, imagefile);
 
 	/* write kernel segments to image */
