@@ -99,6 +99,7 @@ void record_kernel_sectors(FILE **imagefile, Elf32_Ehdr *kernel_header, Elf32_Ph
 void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec)
 {
 
+	printf("AA");
 	printf("0x0000: ./bootblock\n");
 	printf("\tsegment 0\n");
 	printf("\t\toffset 0x%04x\tvaddr 0x%04x\n", bph->p_offset, bph->p_vaddr);
