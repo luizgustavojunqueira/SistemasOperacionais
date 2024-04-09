@@ -48,52 +48,47 @@ Elf32_Phdr *read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr)
 }
 
 /* Writes the bootblock to the image file */
-void write_bootblock(FILE **imagefile, FILE *bootfile, Elf32_Ehdr *boot_header, Elf32_Phdr *boot_phdr)
+void write_bootblock(FILE **imagefile, FILE *bootfile, Elf32_Phdr *boot_phdr)
 {
 
-	int num_sec = (boot_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
-
-	/* write bootblock to image */
-
-	// Cria buffer para armazenar setor
-	char *buffer = malloc(num_sec * SECTOR_SIZE);
+	// Cria buffer para armazenar o bootblock
+	char *buffer = malloc(SECTOR_SIZE);
 
 	// Move o ponteiro de leitura para o início do programa do bootblock
 	fseek(bootfile, boot_phdr->p_offset, SEEK_SET);
 
-	// Le 1 setor do bootblock
+	// Le o bootblock
 	fread(buffer, boot_phdr->p_filesz, 1, bootfile);
 
-	// Escreve 1 setor do bootblock no arquivo de imagem
-	fwrite(buffer, num_sec * SECTOR_SIZE, 1, *imagefile);
+	// Escreve o bootblock no arquivo de imagem
+	fwrite(buffer, SECTOR_SIZE, 1, *imagefile);
 
 	free(buffer);
 }
 
 /* Writes the kernel to the image file */
-void write_kernel(FILE **imagefile, FILE *kernelfile, Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
+void write_kernel(FILE **imagefile, FILE *kernelfile, Elf32_Phdr *kernel_phdr)
 {
+	// Calcula o número de setores necessários para armazenar o kernel, garantindo que o kernel ocupe um número inteiro de setores
 	int num_sec = (kernel_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
 
-	/* write kernel to image */
-
-	// Cria buffer para armazenar setor
+	// Cria buffer para armazenar o kernel
 	char *buffer = malloc(num_sec * SECTOR_SIZE);
 
 	// Move o ponteiro de leitura para o início do programa do kernel
 	fseek(kernelfile, kernel_phdr->p_offset, SEEK_SET);
 
-	// Le 1 setor do kernel
+	// Le o kernel
 	fread(buffer, kernel_phdr->p_filesz, 1, kernelfile);
 
-	// Escreve 1 setor do kernel no arquivo de imagem
+	// Escreve o kernel no arquivo de imagem
 	fwrite(buffer, num_sec * SECTOR_SIZE, 1, *imagefile);
 
 	free(buffer);
 }
 
 /* Counts the number of sectors in the kernel */
-int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
+int count_kernel_sectors(Elf32_Phdr *kernel_phdr)
 {
 	// Calcula o número de setores necessários para armazenar o kernel, garantindo que o kernel ocupe um número inteiro de setores
 	int num_sec = (kernel_phdr->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE;
@@ -101,7 +96,7 @@ int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr)
 }
 
 /* Records the number of sectors in the kernel */
-void record_kernel_sectors(FILE **imagefile, Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr, int num_sec)
+void record_kernel_sectors(FILE **imagefile, Elf32_Phdr *kernel_phdr, int num_sec)
 {
 	/* write kernel size in sectors */
 
@@ -116,7 +111,6 @@ void record_kernel_sectors(FILE **imagefile, Elf32_Ehdr *kernel_header, Elf32_Ph
 void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec)
 {
 
-	printf("AA");
 	printf("0x0000: ./bootblock\n");
 	printf("\tsegment 0\n");
 	printf("\t\toffset 0x%04x\t\tvaddr 0x%04x\n", bph->p_offset, bph->p_vaddr);
@@ -159,7 +153,7 @@ int main(int argc, char **argv)
 
 	/* read executable bootblock and kernel file */
 
-	// Get correct file name from arguments
+	// Pega os nomes corretos do arquivos do bootblock e kernel dentre os argumentos passados
 	if (argc == 3)
 	{
 		boot_program_header = read_exec_file(&bootfile, argv[1], &boot_header);
@@ -173,7 +167,7 @@ int main(int argc, char **argv)
 
 	/* write bootblock */
 
-	write_bootblock(&imagefile, bootfile, boot_header, boot_program_header);
+	write_bootblock(&imagefile, bootfile, boot_program_header);
 
 	/* Write image file signature */
 	// Muda o ponteiro de escrita para o byte 510 do arquivo de imagem
@@ -183,17 +177,17 @@ int main(int argc, char **argv)
 
 	/* write kernel segments to image */
 
-	write_kernel(&imagefile, kernelfile, kernel_header, kernel_program_header);
+	write_kernel(&imagefile, kernelfile, kernel_program_header);
 
 	/* tell the bootloader how many sectors to read to load the kernel */
 
-	record_kernel_sectors(&imagefile, kernel_header, kernel_program_header, count_kernel_sectors(kernel_header, kernel_program_header));
+	record_kernel_sectors(&imagefile, kernel_program_header, count_kernel_sectors(kernel_program_header));
 
 	/* check for  --extended option */
 	if (!strncmp(argv[1], "--extended", 11))
 	{
 		/* print info */
-		extended_opt(boot_program_header, kernel_header->e_phnum, kernel_program_header, count_kernel_sectors(kernel_header, kernel_program_header));
+		extended_opt(boot_program_header, kernel_header->e_phnum, kernel_program_header, count_kernel_sectors(kernel_program_header));
 	}
 
 	return 0;
