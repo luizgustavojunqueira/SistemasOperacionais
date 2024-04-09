@@ -119,8 +119,8 @@ void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec)
 	printf("AA");
 	printf("0x0000: ./bootblock\n");
 	printf("\tsegment 0\n");
-	printf("\t\toffset 0x%04x\tvaddr 0x%04x\n", bph->p_offset, bph->p_vaddr);
-	printf("\t\tfilesz 0x%04x\tmemsz 0x%04x\n", bph->p_filesz, bph->p_memsz);
+	printf("\t\toffset 0x%04x\t\tvaddr 0x%04x\n", bph->p_offset, bph->p_vaddr);
+	printf("\t\tfilesz 0x%04x\t\tmemsz 0x%04x\n", bph->p_filesz, bph->p_memsz);
 	printf("\t\twriting 0x%04x bytes\n", bph->p_filesz);
 
 	int bootblockPadding = ((bph->p_offset + bph->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE) * SECTOR_SIZE;
@@ -128,8 +128,8 @@ void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec)
 
 	printf("0x1000: ./kernel\n");
 	printf("\tsegment 0\n");
-	printf("\t\toffset 0x%04x\tvaddr 0x%04x\n", kph->p_offset, kph->p_vaddr);
-	printf("\t\tfilesz 0x%04x\tmemsz 0x%04x\n", kph->p_filesz, kph->p_memsz);
+	printf("\t\toffset 0x%04x\t\tvaddr 0x%04x\n", kph->p_offset, kph->p_vaddr);
+	printf("\t\tfilesz 0x%04x\t\tmemsz 0x%04x\n", kph->p_filesz, kph->p_memsz);
 	printf("\t\twriting 0x%04x bytes\n", kph->p_filesz);
 
 	int kernelPadding = ((kph->p_offset + kph->p_filesz + SECTOR_SIZE - 1) / SECTOR_SIZE) * SECTOR_SIZE + bootblockPadding;
