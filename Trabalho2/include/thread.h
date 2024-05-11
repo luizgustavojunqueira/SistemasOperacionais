@@ -18,8 +18,9 @@ typedef enum {
 } status_t;
 
 typedef struct tcb {
-	// TODO: define the fields for you TCB
-	
+	int tid;
+	uint64_t rgs[NUMBER_OF_REGISTERS];
+	uint64_t stack[STACK_SIZE];
 	status_t status;
 } tcb_t;
 
