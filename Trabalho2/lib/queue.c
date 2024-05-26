@@ -27,6 +27,8 @@ node_t *dequeue(node_t *queue)
   queue->next = temp->next;
   temp->next = NULL;
 
+  // printf("dequeuing %d\n", ((tcb_t* )temp->thread->tcb)->tid);
+
   return temp;
 }
 
@@ -35,19 +37,26 @@ void enqueue(node_t *queue, node_t *item)
 {
   node_t *p = queue->next;
 
-  if(p == NULL){
+  if (p == NULL)
+  {
     queue->next = item;
     first = queue->next;
     last = first;
     return;
   }
 
-  while(p->next != NULL){
+  while (p->next != NULL)
+  {
     p = p->next;
   }
   p->next = item;
   last = p->next;
+}
 
+// returns the first element of the queue
+node_t *peek(node_t *queue)
+{
+  return queue->next;
 }
 
 // TODO: checks if a queue is empty
@@ -60,9 +69,11 @@ int is_empty(node_t *queue)
   return 0;
 }
 
-void print_queue(node_t *queue){
+void print_queue(node_t *queue)
+{
   node_t *p = queue->next;
-  while(p->next != NULL){
+  while (p->next != NULL)
+  {
     printf("%d\n", ((tcb_t *)p->thread->tcb)->tid);
     p = p->next;
   }

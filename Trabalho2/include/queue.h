@@ -24,6 +24,8 @@
    */
    int is_empty(node_t *queue);
 
+   void print_queue(node_t *queue);
+
    /* Returns the first item in the queue
    * Returns NULL if the queue is empty
    */

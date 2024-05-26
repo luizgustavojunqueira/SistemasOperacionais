@@ -18,12 +18,13 @@ typedef enum {
 } status_t;
 
 typedef struct tcb {
-	int tid;
 	uint64_t rgs[NUMBER_OF_REGISTERS];
 	uint64_t stack[STACK_SIZE];
+	int tid;
 	status_t status;
 	void *(*start_routine)(void*);// ponteiro para as função que a thread executa
 	void *arg;//argumentos da função
+	void *retval;//retorno da função
 } tcb_t;
 
 #endif /* THREAD_H */
