@@ -22,6 +22,8 @@ typedef struct tcb {
 	uint64_t rgs[NUMBER_OF_REGISTERS];
 	uint64_t stack[STACK_SIZE];
 	status_t status;
+	void *(*start_routine)(void*);// ponteiro para as função que a thread executa
+	void *arg;//argumentos da função
 } tcb_t;
 
 #endif /* THREAD_H */

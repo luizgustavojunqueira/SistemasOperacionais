@@ -4,8 +4,8 @@
    #include <stddef.h>
    #include <thread.h>
    typedef struct node {
-      void *tcb_t;
-      node_t *next;
+      thread_t *thread;
+      void *next;
    } node_t;
 
    /* Initialize a queue */
