@@ -1,47 +1,85 @@
 #include <lock.h>
-#include <threadu.h>
+#include <stdlib.h>
 
-enum {
-      SPIN = TRUE,
+#include <thread.h>
+
+enum
+{
+	SPIN = FALSE,
 };
 
 // TODO: inicializes a lock
-void lock_init(lock_t * l)
+void lock_init(lock_t *l)
 {
-	if (SPIN) {
+	if (SPIN)
+	{
 		l->status = UNLOCKED;
-	} else {
+	}
+	else
+	{
+		node_t queue;
+		queue_init(&queue);
+
+		l->queue = &queue;
+		l->status = UNLOCKED;
 	}
 }
 
 // TODO:  acquires a  lock if  it is  available or  blocks the  thread
 // otherwise
-void lock_acquire(lock_t * l)
+void lock_acquire(lock_t *l)
 {
-	if (SPIN) {
+	if (SPIN)
+	{
 		while (LOCKED == l->status)
 			thread_yield();
 		l->status = LOCKED;
-	} else {
+	}
+	else
+	{
+		if (LOCKED == l->status)
+		{
+			block(l);
+		}
+		l->status = LOCKED;
 	}
 }
 
 // TODO:  releases a  lock  and  unlocks one  thread  from the  lock's
 // blocking list
-void lock_release(lock_t * l)
+void lock_release(lock_t *l)
 {
-	if (SPIN) {
+	if (SPIN)
+	{
 		l->status = UNLOCKED;
-	} else {
+	}
+	else
+	{
+		if (is_empty(l->queue))
+		{
+			l->status = UNLOCKED;
+		}
+		else
+		{
+			unblock(l);
+		}
 	}
 }
 
 // TODO: blocks the running thread
-void block()
+void block(lock_t *l)
 {
+	node_t *newNode = (node_t *)malloc(sizeof(node_t));
+	newNode->tcb = current_running;
+	enqueue(l->queue, newNode);
+	current_running->status = BLOCKED;
+	scheduler_entry();
 }
 
 // TODO: unblocks  a thread that is waiting on a lock.
 void unblock(lock_t *l)
 {
+	node_t *releaseThread = dequeue(l->queue);
+	enqueue(&ready_queue, releaseThread);
+	((tcb_t *)releaseThread->tcb)->status = READY;
 }

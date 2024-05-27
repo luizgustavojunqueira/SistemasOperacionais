@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <queue.h>
 #include <thread.h>
 
 node_t ready_queue;
@@ -19,23 +18,25 @@ int tid_global = 0;
 int thread_init()
 {
 
-	queue_init(&ready_queue);
+	if(current_running != NULL)
+	{
+		return -EINVAL;
+	}
 
-	thread_t *main_thread = (thread_t *)malloc(sizeof(thread_t));
-	tcb_t *tcb = (tcb_t *)malloc(sizeof(tcb_t));
-	tcb->arg = NULL;
-	tcb->status = FIRST_TIME;
-	tcb->tid = tid_global++;
-	tcb->start_routine = NULL;
+	// Initialize the ready queue
+	queue_init(&ready_queue); 
 
-	main_thread->tcb = tcb;
+	// Create a tcb for the main thread
+	tcb_t *main_tcb = (tcb_t *)malloc(sizeof(tcb_t));
 
-	node_t *newNode = (node_t *)malloc(sizeof(node_t));
-	newNode->thread = main_thread;
+	// Set the main thread as the current running thread
+	current_running = main_tcb;
 
-	current_running = (tcb_t *)main_thread->tcb;
+	// Set the status of the main thread as FIRST_TIME
+	main_tcb->status = FIRST_TIME;
 
-	enqueue(&ready_queue, newNode);
+	// Set the tid of the main thread as 0
+	main_tcb->tid = tid_global++;
 
 	return 0;
 }
@@ -44,27 +45,36 @@ int thread_init()
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 {
 
-	tcb_t *tcb = (tcb_t *)malloc(sizeof(tcb_t));
-	tcb->arg = arg;
-	tcb->status = FIRST_TIME;
-	tcb->tid = tid_global++;
-	tcb->start_routine = start_routine;
+	// Allocate memory for the new tcb
+	tcb_t *new_tcb = (tcb_t *)malloc(sizeof(tcb_t));
 
-	thread->tcb = tcb;
+	// Put exit_handler() address in the last position of the stack on the tcb
+	new_tcb->stack[STACK_SIZE-1] = &exit_handler;
 
-	node_t *newNode = (node_t *)malloc(sizeof(node_t));
-	newNode->thread = thread;
+	// Set the rsp of the new tcb to the last position of the stack
+	new_tcb->rsp = &new_tcb->stack[STACK_SIZE-1];
 
-	enqueue(&ready_queue, newNode);
+	// Set the argument for the start_routine on reg[9] = %rdi
+	new_tcb->regs[9] = (uint64_t)arg;
 
-	current_running->status = READY;
+	// Set the status of the new tcb as FIRST_TIME
+	new_tcb->status = FIRST_TIME;
 
-	node_t *temp = dequeue(&ready_queue);
+	// Set the tid of the new tcb
+	new_tcb->tid = tid_global++;
 
-	enqueue(&ready_queue, temp);
+	// Set the start_routine of the new tcb
+	new_tcb->start_routine = start_routine;
 
-	current_running = thread->tcb;
-	current_running->start_routine(tcb->arg);
+	// Assign the tcb to the thread
+	thread->tcb = new_tcb;
+
+	// Create a new node for the tcb to be inserted in the ready queue
+	node_t *new_node = (node_t *)malloc(sizeof(node_t));
+	new_node->tcb = new_tcb;
+
+	// Insert the tcb in the ready queue
+	enqueue(&ready_queue, new_node);
 
 	return 0;
 }
@@ -73,19 +83,17 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 int thread_yield()
 {
 
-	printf("\nInicio Yield\n");
-
+	// Set the status of the current running thread as READY
 	current_running->status = READY;
 
-	node_t *temp = dequeue(&ready_queue);
+	// Create a new node for the current running thread to be inserted in the ready queue
+	node_t *node = (node_t *)malloc(sizeof(node_t));
+	node->tcb = current_running;
 
-	enqueue(&ready_queue, temp);
+	// Insert the current running thread in the ready queue
+	enqueue(&ready_queue, node);
 
-	printf("Dentro yield\n");
-	print_queue(&ready_queue);
-	printf("Fim Yield\n");
-	printf("\n");
-
+	// Call the scheduler to select the next thread to execute and change context
 	scheduler_entry();
 
 	return 0;
@@ -94,22 +102,21 @@ int thread_yield()
 // TODO: waits for a thread to finish
 int thread_join(thread_t *thread, int *retval)
 {
-	tcb_t tcb = *((tcb_t *)thread->tcb);
+	// Get the tcb of the thread
+	tcb_t *tcb = thread->tcb;
 
-	if (tcb.status == EXITED)
-	{
-		*retval = 0;
-		return 0;
-	}
-
-	current_running = (tcb_t *)thread->tcb;
-
-	while (tcb.status != EXITED)
+	// Wait for the thread to finish
+	while (tcb->status != EXITED)
 	{
 		thread_yield();
 	}
 
-	retval = (int *)tcb.retval;
+	// Set the return value of the thread
+	if(retval != NULL)
+	{
+		// The return value is in reg[14] = %rax
+		*retval = tcb->regs[14];
+	}
 
 	return 0;
 }
@@ -118,12 +125,8 @@ int thread_join(thread_t *thread, int *retval)
 void thread_exit(int status)
 {
 
-	printf("exit\n");
-
-	current_running->retval = status;
+	// Mark the current running thread as EXITED
 	current_running->status = EXITED;
-
-	printf("exit %d\n", current_running->tid);
 
 	scheduler_entry();
 }
@@ -131,12 +134,25 @@ void thread_exit(int status)
 // TODO: selects the next thread to execute
 void scheduler()
 {
+
+	// Get the next thread to execute
+	node_t *node = dequeue(&ready_queue);
 	
-	printf("current_running->tid %d\n", current_running->tid);
+	// Set the next thread to execute as the current running thread
+	current_running = node->tcb;
+
+	// Set the status of the next thread to RUNNING
+	current_running->status = RUNNING;
+
+	return;
 }
 
 // TODO: you must  make sure this function is called  if a thread does
 // not call thread_exit
-void exit_handler()
+void exit_handler(void *arg)
 {
+	// Call the start_routine of the thread
+	current_running->start_routine(arg);
+	// If the thread does not call thread_exit, call it
+	thread_exit(0);
 }

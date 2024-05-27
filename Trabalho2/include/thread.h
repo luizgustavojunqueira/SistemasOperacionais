@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <threadu.h>
+#include <queue.h>
 
 #define NUMBER_OF_REGISTERS	15
 #define STACK_SIZE		2048
@@ -14,17 +15,23 @@ typedef enum {
 	      FIRST_TIME,
 	      READY,
 	      BLOCKED,
+		  RUNNING,
 	      EXITED
 } status_t;
 
 typedef struct tcb {
-	uint64_t rgs[NUMBER_OF_REGISTERS];
-	uint64_t stack[STACK_SIZE];
-	int tid;
-	status_t status;
-	void *(*start_routine)(void*);// ponteiro para as função que a thread executa
-	void *arg;//argumentos da função
-	void *retval;//retorno da função
+	status_t status; // 4
+	int tid; // 4
+	void *(*start_routine)(void *); // 8
+
+	uint64_t flags; // registrador de flags
+	uint64_t regs[NUMBER_OF_REGISTERS]; // registradores
+	void *rsp; // topo da pilha
+	uint64_t *stack[STACK_SIZE]; // pilha
 } tcb_t;
+
+// Define the ready queue and current running thread variables
+extern node_t ready_queue;
+extern tcb_t *current_running;
 
 #endif /* THREAD_H */

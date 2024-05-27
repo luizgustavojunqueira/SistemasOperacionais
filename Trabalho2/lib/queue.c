@@ -1,5 +1,4 @@
 #include <queue.h>
-#include <thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 /*
@@ -8,7 +7,7 @@
   may need to define additional functions if you want to implement the
   extra-point functionality.
  */
-// inicializes a queue with head
+// initializes a queue with head
 node_t *first, *last;
 void queue_init(node_t *queue)
 {
@@ -16,18 +15,21 @@ void queue_init(node_t *queue)
   queue->next = NULL;
   first = queue->next;
   last = first;
-  printf("init queue\n");
 }
 
 // TODO: returns the first element of the queue
 node_t *dequeue(node_t *queue)
 {
+
+  if (queue->next == NULL)
+  {
+    return NULL;
+  }
+
   node_t *temp;
   temp = queue->next;
   queue->next = temp->next;
   temp->next = NULL;
-
-  // printf("dequeuing %d\n", ((tcb_t* )temp->thread->tcb)->tid);
 
   return temp;
 }
@@ -67,16 +69,4 @@ int is_empty(node_t *queue)
     return 1;
   }
   return 0;
-}
-
-void print_queue(node_t *queue)
-{
-  node_t *p = queue->next;
-  while (p->next != NULL)
-  {
-    printf("%d\n", ((tcb_t *)p->thread->tcb)->tid);
-    p = p->next;
-  }
-
-  printf("%d\n", ((tcb_t *)p->thread->tcb)->tid);
 }
