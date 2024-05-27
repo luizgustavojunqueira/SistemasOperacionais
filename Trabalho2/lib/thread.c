@@ -4,9 +4,11 @@
 #include <stdint.h>
 
 #include <thread.h>
+#include <util.h>
 
-queue_t ready_queue;
-tcb_t *current_running;
+queue_t ready_queue; // Queue containing the ready threads
+tcb_t *current_running; // Thread executing
+uint64_t current_start_time; // Time when the thread started
 
 int tid_global = 0;
 
@@ -38,6 +40,8 @@ int thread_init()
 	// Set the tid of the main thread as 0
 	main_tcb->tid = tid_global++;
 
+	current_start_time = get_timer();
+
 	return 0;
 }
 
@@ -48,15 +52,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 	// Allocate memory for the new tcb
 	tcb_t *new_tcb = (tcb_t *)malloc(sizeof(tcb_t));
 
-	// Put exit_handler() address in the last position of the stack on the tcb
-	new_tcb->stack[STACK_SIZE-1] = &exit_handler;
-
-	// Set the rsp of the new tcb to the last position of the stack
-	new_tcb->rsp = &new_tcb->stack[STACK_SIZE-1];
-
-	// Set the argument for the start_routine on reg[9] = %rdi
-	new_tcb->regs[9] = (uint64_t)arg;
-
 	// Set the status of the new tcb as FIRST_TIME
 	new_tcb->status = FIRST_TIME;
 
@@ -66,6 +61,18 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 	// Set the start_routine of the new tcb
 	new_tcb->start_routine = start_routine;
 
+	// Set the cpu_time of the new tcb
+	new_tcb->cpu_time = 0;
+
+	// Put exit_handler() address in the last position of the stack on the tcb
+	new_tcb->stack[STACK_SIZE-1] = (uint64_t*)&exit_handler;
+
+	// Set the rsp of the new tcb to the last position of the stack
+	new_tcb->rsp = &new_tcb->stack[STACK_SIZE-1];
+
+	// Set the argument for the start_routine on reg[9] = %rdi
+	new_tcb->regs[9] = (uint64_t)arg;
+
 	// Assign the tcb to the thread
 	thread->tcb = new_tcb;
 
@@ -74,7 +81,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 	new_node->tcb = new_tcb;
 
 	// Insert the tcb in the ready queue
-	enqueue(&ready_queue, new_node);
+	enqueue(&ready_queue, new_node, SCHEDULER_TYPE);
 
 	return 0;
 }
@@ -82,6 +89,9 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 // TODO: yields the CPU to another thread
 int thread_yield()
 {
+
+	// Calculate the cpu time of the current running thread
+	current_running->cpu_time += get_timer() - current_start_time;
 
 	// Set the status of the current running thread as READY
 	current_running->status = READY;
@@ -91,7 +101,7 @@ int thread_yield()
 	node->tcb = current_running;
 
 	// Insert the current running thread in the ready queue
-	enqueue(&ready_queue, node);
+	enqueue(&ready_queue, node, SCHEDULER_TYPE);
 
 	// Call the scheduler to select the next thread to execute and change context
 	scheduler_entry();
@@ -143,6 +153,9 @@ void scheduler()
 
 	// Set the status of the next thread to RUNNING
 	current_running->status = RUNNING;
+
+	// Set the start time of the next thread
+	current_start_time = get_timer();
 
 	return;
 }

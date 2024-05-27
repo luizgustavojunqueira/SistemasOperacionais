@@ -73,7 +73,7 @@ void block(lock_t *l)
 {
 	node_t *newNode = (node_t *)malloc(sizeof(node_t));
 	newNode->tcb = current_running;
-	enqueue(l->queue, newNode);
+	enqueue(l->queue, newNode, 0);
 	current_running->status = BLOCKED;
 	scheduler_entry();
 }
@@ -82,6 +82,6 @@ void block(lock_t *l)
 void unblock(lock_t *l)
 {
 	node_t *releaseThread = dequeue(l->queue);
-	enqueue(&ready_queue, releaseThread);
+	enqueue(&ready_queue, releaseThread, SCHEDULER_TYPE);
 	((tcb_t *)releaseThread->tcb)->status = READY;
 }

@@ -11,6 +11,15 @@
 void scheduler_entry();
 void exit_handler();
 
+/*
+	Escolha do tipo de escalonador
+	FALSE = FIFO
+	TRUE = Escolher a tarefa com o menor tempo de cpu.
+*/
+enum {
+	SCHEDULER_TYPE = FALSE
+};
+
 typedef enum {
 	      FIRST_TIME,
 	      READY,
@@ -23,6 +32,8 @@ typedef struct tcb {
 	status_t status; // 4
 	int tid; // 4
 	void *(*start_routine)(void *); // 8
+	uint64_t cpu_time; // 8
+	uint64_t lixo; // 8, completar 8 bytes que faltam para 32 para funcionar o entry.S
 
 	uint64_t flags; // registrador de flags
 	uint64_t regs[NUMBER_OF_REGISTERS]; // registradores
