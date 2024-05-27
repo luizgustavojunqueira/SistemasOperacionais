@@ -31,7 +31,7 @@ typedef struct tcb {
 } tcb_t;
 
 // Define the ready queue and current running thread variables
-extern node_t ready_queue;
+extern queue_t ready_queue;
 extern tcb_t *current_running;
 
 #endif /* THREAD_H */

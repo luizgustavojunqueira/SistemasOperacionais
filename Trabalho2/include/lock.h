@@ -10,7 +10,7 @@ typedef struct {
 	      LOCKED,
 	} status;
 	// TODO: define a queue for the lock.
-	node_t *queue; 
+	queue_t *queue; 
 } lock_t;
 
 void lock_init(lock_t *);

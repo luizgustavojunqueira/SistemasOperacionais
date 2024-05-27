@@ -5,7 +5,7 @@
 
 #include <thread.h>
 
-node_t ready_queue;
+queue_t ready_queue;
 tcb_t *current_running;
 
 int tid_global = 0;

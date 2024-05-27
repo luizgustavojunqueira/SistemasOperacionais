@@ -1,5 +1,6 @@
 #include <lock.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <thread.h>
 
@@ -13,14 +14,15 @@ void lock_init(lock_t *l)
 {
 	if (SPIN)
 	{
+		
 		l->status = UNLOCKED;
 	}
 	else
 	{
-		node_t queue;
-		queue_init(&queue);
+		queue_t *queue = (queue_t *)malloc(sizeof(queue_t));
+		queue_init(queue);
 
-		l->queue = &queue;
+		l->queue = queue;
 		l->status = UNLOCKED;
 	}
 }
@@ -55,7 +57,7 @@ void lock_release(lock_t *l)
 	}
 	else
 	{
-		if (is_empty(l->queue))
+		if (l->queue->head == NULL)
 		{
 			l->status = UNLOCKED;
 		}
