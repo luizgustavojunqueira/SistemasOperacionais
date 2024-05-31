@@ -7,7 +7,7 @@
   may need to define additional functions if you want to implement the
   extra-point functionality.
  */
-// initializes a queue with head
+// iInitializes a queue with head
 void queue_init(queue_t *queue)
 {
   queue->head = NULL;
@@ -17,15 +17,17 @@ void queue_init(queue_t *queue)
 // TODO: returns the first element of the queue
 node_t *dequeue(queue_t *queue)
 {
-
+  // If the queue is empty, return NULL
   if (queue->head == NULL)
   {
     return NULL;
   }
 
+  // Remove the first element of the queue
   node_t *temp = queue->head;
   queue->head = queue->head->next;
 
+  // If the queue is empty after removing, set the tail to NULL
   if (queue->head == NULL)
   {
     queue->tail = NULL;
@@ -37,13 +39,16 @@ node_t *dequeue(queue_t *queue)
 // inserts a node in a queue
 void enqueue(queue_t *queue, node_t *item, int schedulerType)
 {
-
+  // If the scheduler type is TRUE, insert the node in the queue sorted by cpu_time
   if (schedulerType == TRUE)
   {
     enqueue_sort(queue, item, lessthan);
     return;
   }
 
+  // If the scheduler type is FALSE, insert the node in the queue in FIFO order
+
+  // If the queue is empty, set the head and tail to the new node
   if (queue->head == NULL)
   {
     queue->head = item;
@@ -51,8 +56,8 @@ void enqueue(queue_t *queue, node_t *item, int schedulerType)
     return;
   }
 
+  // If the queue is not empty, insert the new node in the tail
   queue->tail->next = item;
-
   queue->tail = item;
 
   item->next = NULL;
@@ -67,19 +72,23 @@ node_t *peek(queue_t *queue)
 // TODO: checks if a queue is empty
 int is_empty(queue_t *queue)
 {
+  // If the head is NULL, the queue is empty
   return queue->head == NULL;
 }
 
 int lessthan(node_t *a, node_t *b)
 {
+  // If the nodes are NULL, return 0
   if (a == NULL || b == NULL)
   {
     return 0;
   }
 
+  // Get the tcb from each node
   tcb_t *tcb_a = (tcb_t *)a->tcb;
   tcb_t *tcb_b = (tcb_t *)b->tcb;
 
+  // Return true if the cpu_time of tcb_b is less than tcb_a
   return tcb_a->cpu_time > tcb_b->cpu_time;
 }
 

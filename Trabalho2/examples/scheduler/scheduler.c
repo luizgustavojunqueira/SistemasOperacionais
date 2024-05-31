@@ -12,11 +12,13 @@
 
     As funções fazem todas a mesma coisa, a unica diferença é o tamanho dos laços internos
 
-    Todas elas chamam yield 10 vezes no laço externo
+    f1 chama yield 50 vezes no laço externo
+    f2 chama yield 20 vezes no laço externo
+    f3 chama yield 5 vezes no laço externo
 
-    O laço interno de f1 é executado 10 vezes
-    O laço interno de f2 é executado 100 vezes
-    O laço interno de f3 é executado 1000 vezes
+    O laço interno de f1 é executado 10000 vezes
+    O laço interno de f2 é executado 100000 vezes
+    O laço interno de f3 é executado 1000000 vezes
 
     Usando o escalonador por tempo de cpu, f1 vai ser escalonado com maior frequencia, f2 com menos frequencia que 1
     e f3 com a menor frequencia de todas.
@@ -25,10 +27,10 @@
 void *f1()
 {
     double p;
-    for (int j = 0; j < 10; j++)
+    for (int j = 0; j < 50; j++)
     {
         printf("F1 %d outer loop iteration\n", j + 1);
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 10000; i++)
         {
             p += pow(j, i);
         }
@@ -40,10 +42,10 @@ void *f1()
 void *f2()
 {
     double p;
-    for (int j = 0; j < 10; j++)
+    for (int j = 0; j < 20; j++)
     {
         printf("F2 %d outer loop iteration\n", j + 1);
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100000; i++)
         {
             p += pow(j, i);
         }
@@ -58,7 +60,7 @@ void *f3()
     for (int j = 0; j < 5; j++)
     {
         printf("F3 %d outer loop iteration\n", j + 1);
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < 1000000; i++)
         {
             p += pow(j, i);
         }

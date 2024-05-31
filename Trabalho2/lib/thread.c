@@ -20,6 +20,7 @@ int tid_global = 0;
 int thread_init()
 {
 
+	// If the library has already been initialized, return -EINVAL
 	if(current_running != NULL)
 	{
 		return -EINVAL;
@@ -40,6 +41,7 @@ int thread_init()
 	// Set the tid of the main thread as 0
 	main_tcb->tid = tid_global++;
 
+	// Get the start time of the main thread
 	current_start_time = get_timer();
 
 	return 0;
@@ -49,7 +51,7 @@ int thread_init()
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 {
 
-	// Allocate memory for the new tcb
+	// Allocate memory for the new thread tcb
 	tcb_t *new_tcb = (tcb_t *)malloc(sizeof(tcb_t));
 
 	// Set the status of the new tcb as FIRST_TIME
@@ -67,7 +69,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 	// Put exit_handler() address in the last position of the stack on the tcb
 	new_tcb->stack[STACK_SIZE-1] = (uint64_t*)&exit_handler;
 
-	// Set the rsp of the new tcb to the last position of the stack
+	// Set the rsp of the new tcb to point to the last position of the stack
 	new_tcb->rsp = &new_tcb->stack[STACK_SIZE-1];
 
 	// Set the argument for the start_routine on reg[9] = %rdi
@@ -76,7 +78,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg)
 	// Assign the tcb to the thread
 	thread->tcb = new_tcb;
 
-	// Create a new node for the tcb to be inserted in the ready queue
+	// Create a new node for the tcb, to be inserted in the ready queue
 	node_t *new_node = (node_t *)malloc(sizeof(node_t));
 	new_node->tcb = new_tcb;
 
@@ -115,7 +117,7 @@ int thread_join(thread_t *thread, int *retval)
 	// Get the tcb of the thread
 	tcb_t *tcb = thread->tcb;
 
-	// Wait for the thread to finish
+	// If the thread is not finished, yield the CPU
 	while (tcb->status != EXITED)
 	{
 		thread_yield();
