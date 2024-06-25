@@ -13,7 +13,7 @@ def issue(command):
 def check_fs_size():
     fs_size = os.path.getsize('disk')
     if fs_size > fs_size_bytes:
-        print "** File System is bigger than it should be (%s) **" %(pretty_size(fs_size))
+        print "e* File System is bigger than it should be (%s) **" %(pretty_size(fs_size))
 
 def do_exit():
     issue('exit')
