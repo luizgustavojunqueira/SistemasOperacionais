@@ -3,14 +3,14 @@
 #include "common.h"
 
 int atoi(const char *s);
-int strlen(const char *s );
+int strlen(const char *s);
 
 void clear_screen(int minx, int miny, int maxx, int maxy);
 void scroll(int minx, int miny, int maxx, int maxy);
 int peek_screen(int x, int y);
 
-void		ms_delay(uint32_t msecs);
-uint64_t	get_timer( void);
+void ms_delay(uint32_t msecs);
+uint64_t get_timer(void);
 
 void itoa(int n, char *s);
 void itohex(unsigned int n, char *s);

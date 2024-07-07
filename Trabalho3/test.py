@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-import os, sys, subprocess
+import os
+import subprocess
+import sys
+
 fs_size_bytes = 1048576
 
 def spawn_lnxsh():
