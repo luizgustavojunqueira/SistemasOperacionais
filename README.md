@@ -13,4 +13,4 @@ Durante a disciplina foram propostos 2 trabalhos práticos avaliativos e 1 terce
 
 - [X] [Trabalho 1](https://github.com/luizgustavojunqueira/SistemasOperacionais/tree/main/Trabalho1)
 - [X] [Trabalho 2](https://github.com/luizgustavojunqueira/SistemasOperacionais/tree/main/Trabalho2)
-- [] [Trabalho 3](https://github.com/luizgustavojunqueira/SistemasOperacionais/tree/main/Trabalho3)
+- [ ] [Trabalho 3](https://github.com/luizgustavojunqueira/SistemasOperacionais/tree/main/Trabalho3)
